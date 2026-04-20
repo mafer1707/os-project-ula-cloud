@@ -17,7 +17,36 @@
  * - Retornar el PID asignado.
  */
 int spawn_service(int index) {
+
     pid_t pid;
+
+    pid = fork();
+
+    if(pid > 0){    // Proceso Padre
+
+        pthread_mutex_lock(&dashboard_mutex);
+            dashboard[index].pid = pid;
+            dashboard[index].state = STATE_RUNNING;
+        pthread_mutex_unlock(&dashboard_mutex);
+    }
+    else if(pid == 0){     // Proceso Hijo
+
+        apply_resource_limits(dashboard[index].mem_limit);
+        int res = execvp(dashboard[index].path, NULL);
+
+        if(res == -1){
+            exit(1);
+        }
+    }
+    else{       //Error 
+
+        pthread_mutex_lock(&dashboard_mutex);
+            dashboard[index].pid = -1;
+            dashboard[index].state = STATE_CRASHED;
+        pthread_mutex_unlock(&dashboard_mutex);
+
+        return -1;
+    }
 
     // TODO: Invocar la creación del proceso hijo.
 
@@ -26,5 +55,5 @@ int spawn_service(int index) {
     // - Lógica del proceso HIJO (Setup de límites y Ejecución).
     // - Lógica del proceso PADRE (Gestión del dashboard).
 
-    return 0; // Cambiar por el PID real
+    return pid; // Cambiar por el PID real
 }
