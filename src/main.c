@@ -32,6 +32,15 @@ void print_dashboard() {
 
     // TODO: Renderizar cada fila del dashboard con la información actualizada.
 
+    pthread_mutex_lock(&dashboard_mutex);
+        for (int i = 0; i < num_services; i++){
+            printf(" %s ",dashboard[i].name);
+            printf(" %s ",dashboard[i].pid);
+            printf(" %s ",dashboard[i].state);
+            printf(" %s ",dashboard[i].exit_status);       
+        }        
+    pthread_mutex_unlock(&dashboard_mutex);
+
     printf("==============================================================\n");
 }
 
@@ -43,6 +52,15 @@ void handle_shutdown(int sig) {
     printf("\n[ULA-Cloud] Iniciando secuencia de apagado...\n");
     
     // TODO: Notificar y limpiar recursos de procesos hijos.
+
+    pthread_mutex_lock(&dashboard_mutex);
+        for (int i = 0; i < num_services; i++){
+
+            if(dashboard[i].state == STATE_RUNNING){
+                kill(dashboard[i].pid, SIGTERM);               
+            }
+        }        
+    pthread_mutex_unlock(&dashboard_mutex);
     
     exit(0);
 }
@@ -76,6 +94,17 @@ int main(int argc, char *argv[]) {
     printf("[ULA-Cloud] Inicializando %d microservicios...\n", num_services);
     
     for (int i = 0; i < num_services; i++) {
+
+        if(spawn_service(i) < 0) continue;
+
+        pthread_t hilo_monitor;
+        pthread_create(&hilo_monitor,NULL, monitor_service, &dashboard[i]);
+
+        pthread_mutex_lock(&dashboard_mutex);
+            dashboard[i].monitor_thread = hilo_monitor;
+        pthread_mutex_unlock(&dashboard_mutex);
+
+
         /* * TODO: Orquestar el despliegue de servicios y su posterior 
          * monitoreo concurrente. 
          */
