@@ -13,6 +13,33 @@
  * 4. Actualizar el Dashboard Global de forma SEGURA (evitar condiciones de carrera).
  */
 void* monitor_service(void *arg) {
+
+    service_t *service = (service_t *)arg;
+
+    int status;
+    int exit_res;
+    service_state_t state_res;
+
+    int res = waitpid(service->pid, &status, 0);
+
+    if(WIFEXITED(status)){
+
+        exit_res = WEXITSTATUS(status);
+        state_res = exit_res == 0 ? STATE_STOPPED : STATE_CRASHED;
+    }
+    else{
+
+        if(WIFSIGNALED(status)){
+            exit_res = WTERMSIG(status);
+            state_res = STATE_KILLED;
+        }
+    }
+
+    pthread_mutex_lock(&dashboard_mutex);
+        service->exit_status = exit_res;
+        service->state = state_res;
+    pthread_mutex_unlock(&dashboard_mutex);
+
     // TODO: Castear el argumento al tipo de dato correcto.
     
     // TODO: Implementar la espera del proceso específico.
@@ -31,6 +58,5 @@ void* monitor_service(void *arg) {
      * ¡CRÍTICO!: El acceso al array 'dashboard' debe estar protegido. 
      * No olvides liberar el mecanismo de sincronización al terminar.
      */
-
     return NULL;
 }
