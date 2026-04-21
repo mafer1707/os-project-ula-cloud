@@ -34,10 +34,11 @@ void print_dashboard() {
 
     pthread_mutex_lock(&dashboard_mutex);
         for (int i = 0; i < num_services; i++){
-            printf(" %s ",dashboard[i].name);
-            printf(" %d ",dashboard[i].pid);
-            printf(" %d ",dashboard[i].state);
-            printf(" %d ",dashboard[i].exit_status);       
+            printf(" %-12s ",dashboard[i].name);
+            printf(" %-10d ",dashboard[i].pid);
+            printf(" %-15s ",state_names[dashboard[i].state]);
+            printf(" %-10d ",dashboard[i].exit_status);       
+            printf("\n");
         }        
     pthread_mutex_unlock(&dashboard_mutex);
 
