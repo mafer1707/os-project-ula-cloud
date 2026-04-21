@@ -23,6 +23,17 @@ typedef enum {
     STATE_STOPPED    // Terminado normalmente (exit code 0)
 } service_state_t;
 
+//**  Esto es para imprimir los nombre de los estados y no sus números
+const char *state_names[] = {
+    "IDLE", 
+    "RUNNING", 
+    "CRASHED", 
+    "KILLED",   
+    "STOPPED"
+};
+
+//
+
 /**
  * Estructura principal de un servicio (El Dashboard).
  */
