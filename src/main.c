@@ -11,7 +11,17 @@ service_t dashboard[MAX_SERVICES];
 int num_services = 0;
 pthread_mutex_t dashboard_mutex;
 
+//**  Esto es para imprimir los nombre de los estados y no sus números
+const char *state_names[] = {
+    "IDLE", 
+    "RUNNING", 
+    "CRASHED", 
+    "KILLED",   
+    "STOPPED"
+};
+
 /**
+ * 
  * Función de utilidad para limpiar la terminal.
  */
 void clear_screen() {
@@ -62,6 +72,11 @@ void handle_shutdown(int sig) {
             }
         }        
     pthread_mutex_unlock(&dashboard_mutex);
+    
+    printf("[ULA-Cloud] Esperando a que los monitores confirmen las bajas...\n");
+    sleep(2);
+
+    print_dashboard();  // Una última impresión para ver el estado final de los procesos
     
     exit(0);
 }
