@@ -47,7 +47,7 @@ void print_dashboard() {
             printf(" %-12s ",dashboard[i].name);
             printf(" %-10d ",dashboard[i].pid);
             printf(" %-15s ",state_names[dashboard[i].state]);
-            printf(" %-10d ",dashboard[i].exit_status);       
+            printf(" %-10d ",dashboard[i].exit_status);     
             printf("\n");
         }        
     pthread_mutex_unlock(&dashboard_mutex);
@@ -60,25 +60,19 @@ void print_dashboard() {
  * Implementar una estrategia para evitar la proliferación de procesos huérfanos.
  */
 void handle_shutdown(int sig) {
-    printf("\n[ULA-Cloud] Iniciando secuencia de apagado...\n");
     
-    // TODO: Notificar y limpiar recursos de procesos hijos.
-
-    pthread_mutex_lock(&dashboard_mutex);
+    if(sig == SIGINT){
+         // TODO: Notificar y limpiar recursos de procesos hijos.
         for (int i = 0; i < num_services; i++){
 
             if(dashboard[i].state == STATE_RUNNING){
                 kill(dashboard[i].pid, SIGTERM);               
             }
         }        
-    pthread_mutex_unlock(&dashboard_mutex);
     
-    printf("[ULA-Cloud] Esperando a que los monitores confirmen las bajas...\n");
-    sleep(2);
-
-    print_dashboard();  // Una última impresión para ver el estado final de los procesos
-    
-    exit(0);
+        sleep(2);    
+        exit(0);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -91,16 +85,36 @@ int main(int argc, char *argv[]) {
     // 2. Captura de interrupciones del sistema
     signal(SIGINT, handle_shutdown);
 
+    // --- Este código para leer los argumentos fue generado por Gemini ---
+
+    size_t custom_limit = DEFAULT_MEM_LIMIT; 
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--mem") == 0 && (i + 1) < argc) {
+            char *val_str = argv[i + 1];
+            long num = atol(val_str); 
+
+            if (strchr(val_str, 'M') || strchr(val_str, 'm')) {
+                custom_limit = num * 1024 * 1024;
+            } else {
+                custom_limit = num; // Asume bytes si no hay letra
+            }
+            break;
+        }
+    }
+
+    // ---
+
     // 3. Configuración de la carga de trabajo (Servicios de prueba)
     num_services = 3;
     
     strcpy(dashboard[0].name, "Logger");
     strcpy(dashboard[0].path, "./bin/logger");
-    dashboard[0].mem_limit = DEFAULT_MEM_LIMIT;
+    dashboard[0].mem_limit = custom_limit;
 
     strcpy(dashboard[1].name, "Chaos");
     strcpy(dashboard[1].path, "./bin/chaos");
-    dashboard[1].mem_limit = DEFAULT_MEM_LIMIT;
+    dashboard[1].mem_limit = custom_limit;
 
     strcpy(dashboard[2].name, "Leak");
     strcpy(dashboard[2].path, "./bin/leak");
@@ -114,7 +128,9 @@ int main(int argc, char *argv[]) {
         if(spawn_service(i) < 0) continue;
 
         pthread_t hilo_monitor;
-        pthread_create(&hilo_monitor,NULL, monitor_service, &dashboard[i]);
+        if(pthread_create(&hilo_monitor,NULL, monitor_service, &dashboard[i]) != 0) continue;
+
+        pthread_detach(hilo_monitor);
 
         pthread_mutex_lock(&dashboard_mutex);
             dashboard[i].monitor_thread = hilo_monitor;
