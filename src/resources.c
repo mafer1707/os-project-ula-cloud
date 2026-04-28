@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h> 
 #include <sys/resource.h>
 #include "orchestrator.h"
 
@@ -20,7 +21,7 @@ void apply_resource_limits(size_t mem_limit) {
     int res = setrlimit(RLIMIT_AS, &rl);
 
     if(res < 0){
-        exit(1);
+        _exit(1);
     }
 
     // TODO: Configurar la estructura rlimit y ejecutar la syscall.
