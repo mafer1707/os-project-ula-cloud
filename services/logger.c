@@ -12,8 +12,10 @@ volatile sig_atomic_t keep_running = 1;
  * Permite que el servicio cierre archivos antes de morir.
  */
 void handle_sigterm(int sig) {
-    (void)sig;
-    keep_running = 0;
+   
+    if(sig == SIGTERM){
+        keep_running = 0;
+    }
 }
 
 int main() {
