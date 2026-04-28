@@ -16,24 +16,33 @@ void* monitor_service(void *arg) {
 
     service_t *service = (service_t *)arg;
 
+    pid_t pid = service->pid;
     int status;
     int exit_res;
     service_state_t state_res;
 
-    int res = waitpid(service->pid, &status, 0);
+    int res = waitpid(pid, &status, 0);
+
+    if(res == -1){
+        return NULL;
+    }
 
     if(WIFEXITED(status)){
 
         exit_res = WEXITSTATUS(status);
         state_res = exit_res == 0 ? STATE_STOPPED : STATE_CRASHED;
     }
-    else{
+    else if(WIFSIGNALED(status)){
 
-        if(WIFSIGNALED(status)){
-            exit_res = WTERMSIG(status);
-            state_res = STATE_KILLED;
-        }
+        exit_res = WTERMSIG(status);
+        state_res = STATE_KILLED;
+
+    }else{
+        
+        exit_res = -1;
+        state_res = STATE_CRASHED;
     }
+    
 
     pthread_mutex_lock(&dashboard_mutex);
         service->exit_status = exit_res;
