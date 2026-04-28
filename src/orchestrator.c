@@ -20,6 +20,9 @@ int spawn_service(int index) {
 
     pid_t pid;
 
+    char *path = dashboard[index].path;
+    int mem_limit = dashboard[index].mem_limit;
+
     pid = fork();
 
     if(pid > 0){    // Proceso Padre
@@ -31,13 +34,13 @@ int spawn_service(int index) {
     }
     else if(pid == 0){     // Proceso Hijo
 
-        apply_resource_limits(dashboard[index].mem_limit);
+        apply_resource_limits(mem_limit);
 
-        char *args[] = {dashboard[index].path, NULL};
-        int res = execvp(dashboard[index].path, args);
+        char *args[] = {path, NULL};
+        int res = execvp(path, args);
 
         if(res == -1){
-            exit(1);
+            _exit(1);
         }
     }
     else{       //Error 
