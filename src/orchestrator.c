@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include <pthread.h>
 #include "orchestrator.h"
 
@@ -33,6 +34,8 @@ int spawn_service(int index) {
         pthread_mutex_unlock(&dashboard_mutex);
     }
     else if(pid == 0){     // Proceso Hijo
+
+        signal(SIGINT, SIG_IGN);
 
         apply_resource_limits(mem_limit);
 
